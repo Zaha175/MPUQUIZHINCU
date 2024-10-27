@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MPU Quiz</title>
+<style>
+body { margin: 20px; font-family: sans-serif; }
+.question { margin-bottom: 10px; color: darkblue; font-weight: bold; /* Frage wird dunkelblau und fett */ }
+.answers button { display: block; width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #ccc; }
+.answers button.selected { background-color: #e0f2f7; }
+.answers button.correct { background-color: #c8e6c9; }
+.answers button.incorrect { background-color: #ffcdd2; }
+#quiz { display: none; }
+#results { display: none; margin-top: 20px; text-align: center; font-size: 1.2em; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<button onclick="startQuiz()">Quiz starten</button>
+
+<div id="quiz">
+    <div class="question" id="questionText"></div>
+    <div class="answers" id="answerButtons"></div>
+    <button onclick="nextQuestion()">Nächste Frage</button>
+</div>
+
+<div id="results"></div>
+
+<script>
+const qa_data = [
+    {
+                "question": "De ce ați condus la 3 iulie 2016, Vineri?",
+                "answer": "La 3 iulie 2016, Vineri, ora 18.00, am condus peste semaforul roșu. Am făcut un accident. Locul delictului: 12629 Berlin, Zossener Str./ Alte Hellersdorfer Str. Amendă: 240 euro Puncte: 2 Am condus spre un magazin, am fost neatent! Am făcut un accident Îmi pare rău! Am învăţat: În primul rând verific traseul din timp, îmi planific drumul din timp!"
+            },
+            {
+                "question": "De ce ați condus la 24.03.2017, Vineri?",
+                "answer": "La 24.03.2017, Vineri, am condus un autovehicul cu numărul de înmatriculare românesc AB-88-HDL pe strada Walter-Rathenau din Villingen-Schwenningen la ora 16:30, deși știam că permisul de conducere îmi fusese confiscat după un incident anterior de conducere sub influența alcoolului. Am parcat greșit la parcarea din fața hotelului, am vrut să parchez mașina in altă parte! Cât de periculos a fost să conduceți la negru! Foarte periculos, nervos, neasigurat, fac mult mai repede un accident! Am învăţat: Vreau să respect legea în viitor!"
+            },
+            {
+                "question": "De ce ați condus la 20.02.2018, Marți?",
+                "answer": "La 20.02.2018, Marți, am condus în Eybach cu o viteză de 76 km/h, unde limita de viteză permisă era de 50 km/h. Proprietarul vehiculului m-a identificat ca fiind şoferul la momentul faptei. Nu aveam un permis de conducere valabil și eram sub interdicţia de a conduce până la 14 iulie 2018. M-am grăbit la muncă pentru a ajunge la timp să predau mașina. Cât de periculos este să conduci prea repede! Cu cât sunt mai rapid, cu atât distanța de frânare este mai mare (la viteză dublă, distanța de frânare este de patru ori mai mare), nu știam asta la momentul respectiv. La 50 km/h distanța de frânare este de 25 de metri, la 100 km/h este de 100 de metri. Am fost un pericol pentru mine și alții, am înțeles, siguranța circulației este pe primul loc. Am învăţat: Verific mai des vitezometrul, Zona 30, Zona 60 mă țin de reguli, de viteza regulamentară."
+            },
+            {
+                "question": "De ce ați condus la 14.06.2019, Vineri?",
+                "answer": "La 14.06.2019, Vineri, am condus la negru un camion Daimler-Benz Sprinter pe strada Schiller din Geislingen an der Steige. În timpul conducerii țineam un telefon mobil negru la ureche și încărcătura din camion nu era asigurată corespunzător împotriva alunecării. Cât de periculos este să folosești un telefon mobil în timp ce conduci! Mă distrage de la atenția acordată traficului și drumului. Chiar și o secundă de neatenție poate duce la o tragedie. Am învăţat: Nu folosesc Mobil telefonul, numai prin dispozitiv de vorbit, folosesc căștile și când conduc privat și la lucru. Folosesc Mobil telefonul numai când vehiculul și motorul sunt oprite. Cât de periculos este încărcătura nesecurizată! Riscul ca încărcătura să se deplaseze sau să cadă în timpul condusului. Nu sunt asigurat dacă se întâmplă un accident, riscul de răsturnare a mașinii crește in cazul manevrelor bruște. Am învăţat: Încărcătura trebuie să fie fixată în mod corespunzător. Îmi iau mai mult timp acum."
+            },
+            {
+                "question": "De ce ați condus la 01.08.2019, Joi?",
+                "answer": "La 01.08.2019, Joi, am condus un autoturism Audi Q5 pe strada Schwage din Giengen an der Brenz. Am parcat pe locul de parcare al secției de poliție Giengen, deși nu aveam permisul de conducere necesar. Am fost chemat ca martor la un accident! Am vrut să fac un bine, clar, a fost fals conducând fără drept de condus! Cât de periculos a fost să conduceți la negru! Foarte periculos, nervos, neasigurat, fac mult mai repede un accident! Am învăţat: Vreau să respect legea in viitor!"
+            },
+            {
+                "question": "De ce ați condus la 14.06.2021, Luni?",
+                "answer": "La 14.06.2021, Luni, am condus un autoturism Audi pe strada Lonetal din Giengen an der Brenz, deși nu aveam permisul de conducere necesar. Mi-am dus copilul la medic în Sontheim. De ce este periculos? Conduc prea repede, fac mai repede un accident! Am învăţat: În astfel de cazuri, aș apela imediat la serviciile de urgență prin 112, fără să încerc să conduc eu însumi fără permis."
+            },
+            {
+                "question": "De ce sunteți astăzi aici?",
+                "answer": "Sunt aici pentru a vă arăta că mi-am schimbat comportamentul și vreau să vă explic acest lucru! Am condus sub influența alcoolului, am avut o problemă cu alcoolul (am fost în abuz), am condus fără permis (drept de a conduce) și de multe ori prea repede, am ignorat semaforul roşu și am făcut un accident, am folosit un telefon mobil în timp ce conduceam, am condus cu încărcătura nesecurizată, nu am respectat legea, m-am gândit doar la mine, i-am pus pe alții și pe mine în pericol."
+            },
+            {
+                "question": "Ce credeați când conduceaţi fără permis (drept de condus)? De ce ați condus permanent fără permis?",
+                "answer": "Când conduceam fără permis, mă gândeam la munca mea (să nu îmi pierd munca, să supraviețuiesc) și la cum să nu fiu prins de poliție. M-am gândit numai la propriul meu avantaj și nu la alții."
+            },
+            {
+                "question": "De ce ați sperat că nu veți fi prins?",
+                "answer": "Am sperat că nu voi fi prins pentru că eram obișnuit să conduc fără permis și credeam că pot evita sancțiunile legale. Am înțeles că a fost o gândire greșită și am realizat că nu pot ignora legile și regulile de circulație. știam că este ilegal și periculos."
+            },
+            {
+                "question": "De ce este periculos de a conduce fără permis, la negru?",
+                "answer": "În timp ce conduceam fără permis, mă simțeam mereu stresat și speriat că voi fi prins, fac mai repede un accident. Fiecare întâlnire cu poliția sau fiecare sunet de sirenă mă făceau să tremur și să-mi fie frică de consecințele legale."
+            },
+            {
+                "question": "Care sunt consecințele de a conduce fără permis, la negru?",
+                "answer": "Conducerea fără permis are consecințe grave, amenzi, închisoare, pot fi arestat. Pun în pericol viața mea și al celorlalți participanți la trafic. În plus, dacă fac un accident, din cauza stresului, ne fiind asigurat, plătesc daunele."
+            },
+            {
+                "question": "De ce nu ați spus nimănui nimic?",
+                "answer": "Nu am spus nimănui nimic deoarece mi-a fost frică. Mi-a fost frică de ceea ce vor gândi oamenii despre mine și nu am vrut să par, să fiu judecat ca fiind slab. Din cauza asta am ascuns adevărul. Mi-a fost frică de consecințe."
+            },
+            {
+                "question": "Ți-ai dat seama de faptele tale greşite?",
+                "answer": "Am fost un egoist, am făcut ceva ilegal și periculos. Mi-am făcut propria mea lege, a fost o greşeală gravă să conduc fără permis. Am înțeles că am încălcat legea și am pus în pericol siguranța mea și a celorlalți participanți la trafic."
+            },
+            {
+                "question": "De ce condusul fără drept de condus este o infracțiune?",
+                "answer": "Conducerea fără drept de conducere este o infracțiune deoarece am încălcat legea. Prin conducerea fără drept de conducere, se pune în pericol nu doar viața conducătorului auto, ci și a celorlalți participanți la trafic."
+            },
+            {
+                "question": "Cum ați reușit să evitați să fiți prins de autorități atât de mult timp?",
+                "answer": "Am fost norocos că nu am provocat accidente care să atragă atenția autorităților asupra mea. Am condus de cele mai multe ori prea repede pe trasee secundare, cu puțin trafic, ceea ce a redus șansele de a fi prins. Am fost inconștient și iresponsabil, punând în pericol vieți."
+            },
+            {
+                "question": "Cât de des ați condus fără drept de condus sau prea repede fără a atrage atenția și ce concluzionați din aceasta?",
+                "answer": "Am condus fără drept de conducere de multe ori, din obișnuință, cu viteză de mai multe ori. Am învățat că trebuie să fiu responsabil și să respect întotdeauna regulile de circulație, deoarece conducerea fără drept de conducere este o infracțiune gravă și poate pune în pericol viețile celorlalți participanți la trafic."
+            },
+            {
+                "question": "Care este diferența dintre permisul de conducere și dreptul de a conduce?",
+                "answer": "Permisul de conducere este documentul fizic care atestă dreptul unei persoane de a conduce, garantat prin pregătirea completă. Acest drept de condus poate fi obținut prin obținerea unui permis de conducere valabil!"
+            },
+            {
+                "question": "De ce îmi este de folos să respect legea?",
+                "answer": "Respectarea legii este de folos pentru mine deoarece economisesc timp și energie și este mai relaxant. De asemenea, mă protejează de consecințe neplăcute, cum ar fi amenzile, arestarea sau închisoarea."
+            },
+            {
+                "question": "De ce avem atâtea reguli și legi?",
+                "answer": "Respectarea regulilor de circulație este extrem de importantă pentru siguranța tuturor participanților la trafic, ne protejează! Fără reguli clare și respectate de toată lumea, ar fi haos pe străzi, cu consecințe grave asupra vieții și sănătății oamenilor."
+            },
+            {
+                "question": "Ești un șofer sigur?",
+                "answer": "Nu sunt un șofer sigur dacă conduc fără permis de conducere. Dacă aș fi fost un șofer sigur nu aș fi la MPU! Am avut noroc că nu am avut niciodată un accident mai mare. Dar asta nu înseamnă că am fost un șofer sigur."
+            },
+            {
+                "question": "Cum te vezi ca șofer în trecut?",
+                "answer": "În trecut, am fost un șofer egoist și nechibzuit. Nu am respectat legea și am pus în pericol viața mea și a celorlalți participanți la trafic."
+            },
+            {
+                "question": "Cum te vezi ca viitor șofer?",
+                "answer": "Vreau să fiu un șofer bun. Vreau să respect regulile și să fiu atent pe drum. Nu vreau să pun în pericol viața mea sau a altora."
+            },
+            {
+                "question": "Câte persoane trebuie să meargă la MPU pe an?",
+                "answer": "În fiecare an, aproximativ 86.000 de persoane trebuie să meargă la MPU. Foarte puțini oameni merg la MPU din cauza conducerii la negru. Doar aproximativ 2-3% dintre persoanele care merg la MPU au fost prinși conducând fără permis."
+            },
+            {
+                "question": "Ce ați învățat din experiența dumneavoastră?",
+                "answer": "Ce ați învățat din experiența dumneavoastră? Că legea este acolo pentru a ne proteja. Că este important să fiu responsabil. Că este important să respect legea."
+            },
+            {
+                "question": "Ce ați face diferit dacă ați putea să vă întoarceți în timp?",
+                "answer": "Ce ați face diferit dacă ați putea să vă întoarceți în timp? Aș respecta legea și nu aș pune pe nimeni în pericol și aș spune adevărul!"
+            },
+            {
+                "question": "Cine sau ce v-a motivat să vă schimbați comportamentul?",
+                "answer": "Motivul principal pentru schimbarea mea de comportament a fost decizia personală pe care am luat-o - pentru viitorul meu, pentru familia mea și pentru societate. Am realizat că este absolut necesar să îmi asum responsabilitatea pentru acțiunile mele și să mă schimb în bine. Am înțeles că conducerea fără permis este o încălcare a legii și pun în pericol siguranța rutieră."
+            },
+            {
+                "question": "Cum vedeți riscul de recidivă la dumneavoastră?",
+                "answer": "Înțeleg că nimeni nu poate garanta 100% că nu va exista o recidivă, dar consider că riscul de recidivă este minim în cazul meu. Am învățat să vorbesc deschis despre problemele mele, să am încredere în mine și să nu încerc să demonstrez nimic celorlalți. Am învățat să spun \"Nu\" în situațiile care ar putea pune în pericol respectarea regulilor de circulație."
+            },
+            {
+                "question": "Ce situații ar fi periculoase din cauza riscului de recidivă?",
+                "answer": "1. O situație periculoasă cu risc ridicat de recidivă ar fi dacă aş avea o urgență medicală și aș trebui să transport rapid pe cineva la spital. În astfel de cazuri, aș apela imediat la serviciile de urgență prin 112, fără să încerc să conduc eu însumi fără permis. 2. Situație periculoasă este atunci când am un termin fix, de exemplu dacă aș întârzia undeva și trebuie să ajung rapid la destinație. În trecut, am fost tentat să conduc fără permis pentru a nu întârzia sau a nu pierde o întâlnire importantă. Am învățat să planific mai bine timpul."
+            },
+            {
+                "question": "Schimbări! Cum vă imaginați viitorul?",
+                "answer": "Când am fost ultima dată prins, i-am spus soției tot adevărul. I-am spus și șefului meu totul. Mă așteptam la o reacție mult mai rea din partea nevestei. La serviciu, am spus totul aşa cum a fost. Șeful nu a fost entuziasmat. A fost foarte eliberator când am spus totul. Ar fi fost mult mai bine pentru mine dacă aș fi spus totul imediat. În primul rând, am învățat că este important să fiu sincer și deschis cu cei din jurul meu. Am realizat că ascunderea adevărului nu face decât să agraveze situația și să creeze mai multe probleme. Prin urmare, în viitor, intenționez să spun întotdeauna adevărul, indiferent cât de dificil ar fi. Viitor: Aspirații și îmbunătățiri: Vreau să duc o viață mai bună. Sunt mulțumit astăzi şi am început să fac din nou sport. Am o slujbă bine plătită care îmi permite să-mi susțin familia și să-mi îndeplinesc visurile."
+            },
+            {
+                "question": "Lecţii învățate din pregătirea MPU?",
+                "answer": "M-am văzut din perspectiva mea și înțeleg că există reguli pe care trebuie să le respect. Schimbarea comportamentului: Am realizat că comportamentul meu anterior, de a încerca mereu să le fac pe plac tuturor și de a evita să vorbesc despre problemele mele pentru că credeam că asta fac doar oamenii slabi, în trecut, că îmi era teamă să par slab, a fost greșit. Comunicare deschisă: Am învățat că este important să discut deschis despre problemele mele, să spun adevărul și să nu mai evit să cer ajutor, să accept ajutorul. Pregătire pentru viitor: Că riscul de recidivă nu poate fi exclus. Sunt pregătit pentru viitor."
+            },
+            {
+                "question": "Ați vrea să primiți neapărat dreptul de condus înapoi?",
+                "answer": "Nu neapărat, ar fi frumos! Nu este vorba că îl doresc cu orice preț înapoi, mai important este faptul că am învățat din propriile greşeli și că vreau să respect legea în viitor."
+            },
+            {
+                "question": "Ce spuneți despre faptul că trebuie să faceți MPU?",
+                "answer": "1. Dacă nu pățeam asta, nu aș fi schimbat nimic. 2. M-am întrebat unde aș fi fost peste 10-20 de ani cu acel comportament iresponsabil. 3. Sunt hotărât să demonstrez că am învățat din greşeli și că pot fi un participant responsabil în trafic."
+            },
+            {
+                "question": "Cum ați reușit să evitați să fiți prins de autorități atât de mult timp?",
+                "answer": "Am fost norocos că nu am provocat accidente sau incidente care să atragă atenția autorităților asupra mea. Realizarea egoismului: Abia acum îmi dau seama că am fost egoist punându-mi interesele personale înaintea celor ale comunității și respectării legii."
+            },
+            {
+                "question": "De ce ați condus deseori prea repede cu toate că ați știut că nu aveți permis?",
+                "answer": "Am condus de cele mai multe ori pe trasee secundare, cu puțin trafic, ceea ce a redus șansele de a fi oprit pentru un control. Ignorarea riscurilor: Am ignorat toate riscurile, am fost inconștient și iresponsabil, punând în pericol vieți."
+            },
+            {
+                "question": "De ce veniți la MPU? De ce sunteți astăzi aici?",
+                "answer": "Am condus sub influența alcoolului, am avut o problemă cu alcoolul (am fost în abuz), am condus fără permis (drept de a conduce) și de multe ori prea repede, am ignorat semaforul roşu și am făcut un accident, am folosit un telefon mobil în timp ce conduceam, am condus cu încărcătura nesecurizată, nu am respectat legea, m-am gândit doar la mine, i-am pus pe alții și pe mine în pericol. Sunt aici pentru a vă arăta că mi-am schimbat comportamentul și vreau să vă explic acest lucru!"
+            },
+            {
+                "question": "De ce credeți că autoritățile sunt îngrijorate cu privire la capacitatea dumneavoastră de a conduce un vehicul? Sunteți de acord că veniți la MPU?",
+                "answer": "Da, sunt de acord pentru că nu am respectat permanent legea! Am pus în pericol viața mea și a altora!"
+            },
+            {
+                "question": "Descrieți ziua delictului din punctul dvs. de vedere cu data și ora?",
+                "answer": "21.01.2017 Sâmbătă, Am fost controlat de Poliție la 01:07, colectarea sângelui la 01:33, am avut 1,85 Promille. Începutul consumului de alcool până la colectarea sângelui: 8,5 ore! Sâmbătă, 21.01.2017, zi de naştere, am început să consum alcool de la 17:00 până la 24:00. Am fost patru prieteni. Am băut 10 sticle de bere (jumătate), 5 Litri de bere, (5%) + 2 duble țuică (snaps) (40 ml, 40 Vol.-%)."
+            },
+            {
+                "question": "Nu, nu a fost planificat! Ați plănuit să consumaţi în ziua respectivă atât de mult?",
+                "answer": "Nu, nu a fost planificat! Nu am avut controlul asupra consumului, asta este problema, consumul mi-a scăpat de sub control în timpul petrecerii!"
+            },
+            {
+                "question": "Acum înţeleg că siguranța circulaţiei este mai importantă (este pe primul loc), ar fi trebuit să chem salvarea. Cum aţi dorit iniţial să mergeţi acasă, cum ați planificat acest lucru și de ce v-ați abătut de la planul dvs.?",
+                "answer": "Am vrut să dorm la prieteni, dar în lipsa ţigărilor m-am decis să conduc până la benzinărie, deși era la doar un kilometru distanţă. Am condus din confort, fără să iau în considerare pericolul la care mă expuneam. Pe drumul de întoarcere am fost oprit de poliție și aveam 2 promile peste limita legală. A fost o decizie greşită şi iresponsabilă, conducând sub influența alcoolului. Îmi pare rău!"
+            },
+            {
+                "question": "Aţi crezut că mai puteți conduce în siguranţă?",
+                "answer": "Da, m-am simțit în stare să conduc. Din perspectiva de astăzi, desigur, nu a fost cazul!"
+            },
+            {
+                "question": "Ce efecte are alcoolul asupra capacității de conducere?",
+                "answer": "Reacție slabă, vedere tunel, mai mult preocupat de sine, mai puţin concentrat. Distanțele nu mai pot fi estimate corect, de exemplu cu maşinile care circulă în sens opus sau în faţă. Mai ales periculos pentru că nu sunt asigurat, dacă fac accident sub influenţa alcoolului."
+            },
+            {
+                "question": "Cât de des ați fost sub influenţa alcoolului pe drum fără a atrage atenția și ce concluzionați din aceasta?",
+                "answer": "Din păcate am condus deseori sub influența alcoolului, ignorând riscurile. Am condus de câteva ori ca în ziua delictului, sau cu restalcool în sânge, da! Asta a fost iresponsabil din partea mea. Îmi pare rău! Am înțeles ce pericol am fost în traficul rutier! Sunt bucuros mai ales că nu am făcut un accident, nu am rănit pe nimeni in ziua respectivă!"
+            },
+            {
+                "question": "A doua zi după delict, situație jenantă, mi-a fost ruşine! Gânduri, sentimente a doua zi după delict?",
+                "answer": "Am fost nepăsător și egoist. Ceea ce am făcut a fost greşit, am încălcat legea, aș fi putut răni pe cineva în trafic. Eu însumi nu aş vrea să fiu rănit în acest fel, această greşeală a fost gravă și periculoasă. Ştiu că această societate s-ar scufunda în haos dacă toată lumea ar face întotdeauna ceea ce dorește. Nu vreau să trăiesc eu însumi într-un astfel de haos. M-am gândit mult și mi-am dat seama că am o problemă cu alcoolul (fără control)."
+            },
+            {
+                "question": "Cum v-aţi descurcat cu alcoolul după delict? Cine sau ce te-a motivat să-ți schimbi comportamentul? Care a fost punctul de cotitură?",
+                "answer": "După ce mi-am pierdut permisul de conducere, nu am Știut ce să fac, nu înțelegeam nimic, am fost atât de frustrat, încât am continuat să beau primele 2-3 luni ca înainte, dar încet-încet mi-am redus consumul, ocazional o bere, două beri pe lună în weekend la ocazii speciale. Înainte de a începe abstinenţa, în 17 Iunie 2022, am băut ultima dată, la nunta mea, am renunţat complet la alcool. Punctul de cotitură: Am avut mai multe discuții cu nevasta mea, a fost gravidă la momentul respectiv, m-am gândit mult si m-am decis să-mi schimb comportamentul pentru viitorul meu, pentru familia mea, dar și pentru societate, am realizat că o schimbare este necesară. Schimbarea vreau să o menţin permanent."
+            },
+            {
+                "question": "Am realizat că nu am control asupra consumului, certuri și situații jenante, am neglijat hobby-urile şi mi-am dat seama că alcoolul îmi afectează negativ sănătatea şi bunăstarea generală. De ce ați renunţat la alcool?",
+                "answer": "Am renunțat la alcool deoarece am realizat că nu am control asupra consumului și că acesta îmi provoacă probleme în viaţă. Certuri și situații jenante ca urmare a consumului excesiv de alcool. În plus, am neglijat hobby-urile şi mi-am dat seama că alcoolul îmi afectează negativ sănătatea și bunăstarea generală. Am luat decizia fermă de a renunța la alcool pentru totdeauna și de a-mi reconstrui viața într-un mod mai sănătos și mai echilibrat."
+            },
+            {
+                "question": "Va fost uşor să renunțați la alcool?",
+                "answer": "Nu!, nu a fost uşor, a fost neobişnuit să nu mai beau ca înainte alcool, nu a fost o problemă fizică, dar gândurile la alcool, au fost la început prezente, la zile de nașteri, petreceri."
+            },
+            {
+                "question": "De ce nu ați renunţat mai devreme la alcool?",
+                "answer": "În trecut, nu mi-am pus niciodată problema să renunţ la băut, deoarece nu am avut grijă de sănătatea mea. Credeam că alcoolul mă ajută să fac faţă stresului şi îmi uşurează relaţiile sociale. Consumul de alcool era considerat cel mai normal lucru din lume la petreceri și nu m-am gândit la consecințele negative asupra corpului meu."
+            },
+            {
+                "question": "Când aţi intrat pentru prima dată în contact cu alcoolul și când ați consumat pentru prima dată? La vârsta de 15 ani am probat o înghiţitură de bere pentru prima dată. Nu mi-a plăcut atunci deloc!",
+                "answer": "Cât și cât de des ați consumat? Trecut: Între 20 şi 29 de ani (2007-2017): am băut 3-4 beri de 0,5 litri și 2 duble de două, trei ori pe lună, mai ales în weekend, de obicei la ocazii speciale sau la restaurant. De la 29 la 30 de ani (2016-2017), când am venit in Germania, mi-am schimbat comportamentul de a bea în mod negativ, am început să beau regulat, din păcate, cantitatea de băutură a crescut! Cantitate Diferit după muncă, de obicei miercuri, joi 3-4 beri. În weekend 4-5, 5-6, 7-8 beri. Cantităţi maxime: la fiecare 2 luni 10 beri + 4 duble, deci de aproximativ 6 ori pe an. Prin urmare, cantitatea şi frecvența consumului de alcool au crescut constant de-a lungul anilor, ajungând la un consum problematic în ultimii ani."
+            },
+            {
+                "question": "Care au fost aspectele pozitive ale consumului de alcool?",
+                "answer": "În primul rând, era plăcut. Mă simțeam relaxat și vesel. Un alt lucru pozitiv era că mă simțeam în largul meu și social în compania prietenilor, mai vorbăreţ şi deschis. Alcoolul avea uneori și un efect distractiv, îmi ridica starea de spirit."
+            },
+            {
+                "question": "Care au fost aspectele negative ale consumului de alcool?",
+                "answer": "A doua zi m-am luptat cu dureri de cap, greață, oboseală şi lipsă de putere. Eram obosit, nemotivat, o persoană complet diferită! Cu puţin și cu mult alcool? Cu puțin alcool, adică una-două sticle de bere, mă simțeam relaxat şi vesel, nu am avut plângeri a doua zi. Însă cu mult alcool, aproximativ 5-6 sticle de bere, lucrurile se schimbau. Mă confruntam cu dureri de cap, greață și oboseală excesivă a doua zi. Nu îmi mai puteam desfăşura activitatea normal."
+            },
+            {
+                "question": "Unde și cu cine ați consumat mai ales?",
+                "answer": "Am consumat alcool în special în compania prietenilor și colegilor de muncă. De obicei ieşeam în oraş miercuri, joi seara după muncă pentru o bere la un local. De asemenea, băusem la petreceri, nunţi sau evenimente importante alături de cunoscuți. Astfel, momentele de relaxare în gașcă erau asociate cu băuturile alcoolice. În trecut, pentru a mă simți acceptat în cercul de prieteni, beam la fel ca ei. Am băut doar în companie cu prietenii și colegii, niciodată singur."
+            },
+            {
+                "question": "Ați fost vreodată întrebat despre consumul de alcool?",
+                "answer": "Da, din mai multe părți (mama și prietena). Ar bea prea mult. Dar am considerat că consumul meu este normal. Am ignorat toate lucrurile. Au existat și certuri din cauza alcoolului. De când am încetat să beau, totul sa dezvoltat mai pozitiv. Mă înţeleg mai bine cu partenera mea. De asemenea, sunt mult mai productiv la locul meu de muncă."
+            },
+            {
+                "question": "Au existat probleme cu prietena sau la lucru din cauza consumului de alcool?",
+                "answer": "Bineînţeles, ne-am certat deseori din cauza consumului de alcool, la lucru, luni fără putere, obosit, da, am avut probleme să mă concentrez la muncă!"
+            },
+            {
+                "question": "V-ați simțit vinovat câteodată de consumul de alcool?",
+                "answer": "Da, sigur! Mai ales când ai un cap mare a doua zi. Dar două zile mai târziu uitasem deja, știam că trebuie să fac ceva. A rămas însă gândul, nu am făcut nimic."
+            },
+            {
+                "question": "Cum evaluaţi consumul, ați pierdut vreodată controlul asupra cantităţilor de băut?",
+                "answer": "În trecut am avut probleme cu alcoolul și am pierdut de câteva ori controlul cantităților consumate, ajungând să mă îmbăt peste măsură. S-a întâmplat de aproximativ 6 ori pe an. De obicei beam bere, dar uneori țuică, ceea ce mă făcea să-mi pierd frânele mai repede. Trebuie să recunosc că nu ştiam să mă opresc la timp."
+            },
+            {
+                "question": "Dacă au apărut rupturi de film din cauza consumului de alcool, adică dacă după un consum excesiv de alcool aţi uitat părți din seara în care ați băut excesiv?",
+                "answer": "Da, în perioada în care consumam foarte mult alcool, de câteva ori am avut rupturi de film, după o seara în care băusem în exces. Erau deja câteva porțiuni din seara petrecută pe care nu mi le mai aduceam aminte. Acesta era un semn clar că depăşisem limita sigură și alcoolul îmi afecta memoria."
+            },
+            {
+                "question": "V-ați abţinut în mod conştient și deliberat de a consuma alcool în trecut sau mai des pe o perioadă mai lungă de timp?",
+                "answer": "Sincer, nu am avut pauze de băut și nu au existat niciodată încercări de abstinență. Nu, nu m-am abţinut conştient și deliberat de a consuma alcool pe o perioadă mai îndelungată de timp. Deşi uneori, după o seara de beție, îmi dădeam seama că nu controlasem bine situația și că ar fi trebuit să reduc cantitatea consumată, nu luam măsuri concrete să mă las. Greşeala mea a fost că uitam prea curând de problemele provocate de alcool și nu înțelegeam faptul că abuzam deja de el."
+            },
+            {
+                "question": "În ce categorie de băutori te plasezi azi retrospectiv? Cum aţi evalua comportamentul dvs. de băut până la data infracţiunii? Astăzi mă văd în abuz, cantităţile de alcool au fost ridicate și problematice. Scala la 8. (sub mediu mediu abuziv dependent)? Scala 1 2 3 4 5 6 7 8 9 10",
+                "answer": "Ce vorbeşte împotriva faptului că nu erați dependent de alcool? Nu am avut simptome fizice. M-am oprit fără ajutor. Nu am băut singur! Nu am băut cantităţi mari în timpul săptămânii. Nu am băut nimic dimineața. Mi-am respectat Terminele. Nu am fost în spital, nu am făcut Terapie."
+            },
+            {
+                "question": "Beți alcool astăzi? Dacă da, ce, cât și cât de des? Beți bere fără alcool? Vă puteți imagina să beți una sau două beri în viitor?",
+                "answer": "Sunt abstinent de mai mult de un an! Nu! Nu, nu beau bere fără alcool, acord în mod conștient atenție la ceea ce mănânc și dacă există alcool în băuturi, alimente sau medicamente. În cazul medicamentelor, întreb dacă există alternative fără alcool. Nu! am probleme cu alcoolul, ştiu că nu va rămîne doar la o bere!"
+            },
+            {
+                "question": "Ce contact aveți momentan cu gașca ta, cu care ați consumat?",
+                "answer": "Între timp nu mai am niciun contact cu clica mea. Când mi-am exprimat dorința de a nu mai bea alcool, unii dintre foștii prieteni nu au fost în stare să mă înțeleagă sau să mă accepte. Majoritatea întâlnirilor noastre se desfăşurau în locuri unde se consuma băuturi alcoolice. Acum evit astfel de evenimente sau localuri. În cercul meu actual de prieteni, consumul intensiv de alcool nu ar fi acceptat."
+            },
+            {
+                "question": "De ce ați băut? Cauze?",
+                "answer": "Cauza o văd în trecutul meu și se află în psihicul meu, în gândurile și sentimentele mele. În România, părinții mei s-au ocupat de mine şi de sora mea au avut timp pentru noi. La școală a fost bine, mi-a plăcut. Apoi, din 2016 am venit în Germania, unde nu cunoşteam pe nimeni și nu înțelegeam limba. Mi-am pierdut grupul meu stabil de apartenenţă şi recunoaştere (familia şi anturajul, prietena). M-am simțit singur şi stresat. Presiunea constantă în viața profesională, grijile economice, dorinţa de a mă dovedi, dorinţa de a uita de probleme, stresul, singurătatea m-au determinat să încep să beau alcool regulat. Am început să beau cu colegii mei noi de lucru pentru a-mi reduce stresul şi pentru a uita de probleme. În sfârşit, m-am simțit acceptat. Acum, realizez că dorința mea de a fi acceptat și de a aparţine m-a făcut să beau mai mult. Am încercat să le fac pe plac tuturor și să nu fiu respins. Nu am putut spune niciodată \"Nu!\" Nu am vrut să-mi arăt slăbiciunile şi nu am vrut să vorbesc cu nimeni despre problemele mele. Am ajuns să nu mai am control asupra alcoolului. Denumiți câteva motive interne pentru consumul de alcool! Denumiți câteva motive externe pentru consumul de alcool! Motive interne: - singurătate - frică - suprasolicitare - caută pace, liniște și securitate - subsolicitare și vid interior. Motive externe: - despărțire - divorț - probleme la firma/de afaceri - structuri dificile la locul de muncă - probleme cu partenerul de viață."
+            },
+            {
+                "question": "Care a fost funcţia consumului de alcool? Cum te-ai descurcat cu stresul în trecut?",
+                "answer": "Am băut alcool pe de o parte, pentru a reduce stresul, neliniştea, nemulțumirea, pentru a uita de probleme. Mi-a fost greu aici, în Germania, la început, am fost singur, nu vorbeam limba germană!"
+            },
+            {
+                "question": "Cum faci față stresului în viața ta astăzi? Cum ai redus stresul?",
+                "answer": "Mi-am redus stresul pentru că acum vorbesc deschis şi sincer despre problemele mele. Îmi exprim limitele şi spun \"Nu\"! Astăzi sunt mai relaxat şi mulțumit. Acestea sunt efecte pozitive pe care vreau să le păstrez."
+            },
+            {
+                "question": "Renunţarea la băut a adus lucruri pozitive în viața mea:",
+                "answer": "Relaţia mea este mai bună și mă bucur să am un băiețel de 5 ani. La serviciu, sunt mai productiv și chiar am devenit șef de tură! Mi-am reaprins pasiunea pentru vechiul meu hobby. Fac din nou mai mult sport și am câştigat încredere în mine. Îmi place să mă plimb cu bicicleta și să citesc seara înainte de culcare. Am chiar cumpărat o bicicletă nouă! Merg des la plimbări cu soția și băiatul meu, ne bucurăm de aceste momente în familie. În weekend, acum îmi petrec timpul liber în jurul hobby-urilor şi familiei, în loc să beau."
+            },
+            {
+                "question": "Care ar fi Situaţiile Riscante în care noul comportament al consumului de alcool ar putea fi expus riscului?",
+                "answer": "Situaţii riscante, anumite crize de viață pot fi periculoase, cum ar fi moartea unei persoane dragi, boli grave, pierderea locului de muncă, frică, schimbări de dispoziţie, pierderea unui partener sau îmbolnăvirea gravă. În fiecare caz nu aş bea alcool. Mi-aş găsi sprijinul în familie. Continui să trăiesc, privesc înainte. Situaţie riscantă (Cineva îmi oferă alcool în viitor la o zi de naştere!) Dacă cineva îmi oferă alcool în viitor, fie la o zi de naștere sau la o petrecere, îi voi spune că nu mai beau alcool pentru că am o problemă cu alcoolul și că văd orice consum ca o pură pierdere de timp! Îmi place să ciocnesc paharele, dar numai cu apă! Îi voi recomanda să facă la fel. Comand băuturi nealcoolice. Evit evenimentele în care experiența a arătat că oamenii beau mult."
+            },
+            {
+                "question": "Cum vă asiguraţi că noul comportament rămâne stabil pe termen lung?",
+                "answer": "În viitor, vreau să respect legea, pentru că nu mai vreau să pun viața nimănui în pericol. Desigur, nimeni nu poate da 100%. Riscul este minimal pentru că: Astăzi vorbesc cu alții (prietena care mă sprijină) despre problemele mele cât mai curând posibil. Nu mă mai arăt permanent puternic, pot să arăt că sunt și slab. Am învățat să spun \"Nu\", nu le mai fac pe plac la toți! Cunosc Situaţiile Riscante, ştiu despre dorința mea de a fi acceptat și de a aparţine, îmi cunosc cauzele consumului!"
+            },
+            {
+                "question": "Când ați spus ultima dată Nu?",
+                "answer": "Am refuzat unui prieten care sa mutat pentru a cincea oară în doi ani și care a avut nevoie din nou de oameni pentru a transporta cutii."
+            },
+            {
+                "question": "Aţi fost un şofer sigur?",
+                "answer": "Nu, altfel nu aş fi la MPU, deoarece şoferii foarte buni nu trebuie să meargă la MPU!"
+            },
+            {
+                "question": "Cum apreciați faptul că nu ați avut niciodată un accident mai mare?",
+                "answer": "A fost doar noroc!"
+            },
+            {
+                "question": "De ce avem atâtea reguli şi legi?",
+                "answer": "Avem nevoie de reguli. Regulile ne protejează. Am înţeles că dacă respect regulile voi trăi în siguranță și în pace. Fără reguli ar fi doar haos."
+            },
+            {
+                "question": "Cum vă vedeți ca şofer în trecut?",
+                "answer": "Am fost un şofer egoist şi neglijent, mă gândeam doar la mine și nu la consecințe! Îmi pare rău!"
+            },
+            {
+                "question": "Ce credeți că este un şofer bun, normal?",
+                "answer": "Un şofer de maşină bun este cineva care respectă regulile, este atent, se gândește la alții și nu mai reprezintă un pericol în trafic!"
+            },
+            {
+                "question": "Câte persoane trebuie să meargă la MPU pe an?",
+                "answer": "90.000 de persoane în anul 2019, din cauza alcoolului 40%, droguri şi medicamente cu 30%, punkte 18%, restul 12%."
+            },
+            {
+                "question": "Plan de urgenţă (o Listă) după o recidivă (dacă beau din nou!)",
+                "answer": "Numărul de telefon al consultantului MPU care este întotdeauna disponibil! Indică ce se întâmplă dacă continui să consumi: Datorii, separare, pierderea locului de muncă, boală etc.! Riscul de a pierde tot ce am realizat până acum! Sănătate, prieteni, Sport, bani, hobby-uri!"
+            },
+            {
+                "question": "Ce aţi învățat în timpul pregătirii MPU?",
+                "answer": "Am vorbit despre delict, I-am analizat și am găsit greşelile mele. Greşeli: Am crezut că nu voi fi prins! Am fost un Egoist! Nu am respectat legea: Am condus sub influența alcoolului! Am fost un pericol pentru mine și pentru alții! Cunosc cauzele consumului meu, dorința mea de recunoaştere şi apartenenţă! Ştiu că alcoolul este otravă pentru nervi și celule este dăunător sănătății. Poate duce la dependenţă. Cu fiecare intoxicație, celulele creierului mor. Consumul regulat de băut duce la o memorie slabă și la scăderea inteligenţei. Ştiu ce este memoria dependenței (creierul îşi va aminti întotdeauna nivelurile maxime). Ştiu ce înseamnă creşterea toleranței (alcoolul devine din ce în ce mai mult). Ştiu ce este consumul excesiv de alcool, atunci când cinci sau mai multe pahare de alcool sunt băute de o dată. Că riscul de a comite un delict identic nu poate fi exclus. Am discutat despre avantajele și dezavantajele. Sunt pregătit pentru viitor."
+            },
+            {
+                "question": "Credeți că ar trebui să vă reprimiți permisul de conducere, vreți neaparat carnetul înapoi?",
+                "answer": "Nu neaparat, dar cred că ar fi frumos dacă mi-aş obține permisul de conducere înapoi. M-ai important este pentru mine însă faptul că mi-am schimbat comportamentul, nu mai vreau să fiu un pericol pentru nimeni, când particip la traficul rutier. Pentru că nu mai vreau să pun în pericol viața mea nouă."
+            },
+            {
+                "question": "Mai aveţi ceva de adăugat pentru a încheia?",
+                "answer": "Cred că retragerea permisului de conducere nu este atât de grav, deoarece este o învățătură de minte pentru mine. Dacă nu mi s-ar fi întâmplat asta, atunci nu aş fi schimbat nimic în viaţă. Sunt recunoscător pentru asta!"
+            },
+            {
+                "question": "Situaţie riscantă (Mă întâlnesc întâmplător cu vechii mei prieteni şi unul dintre ei îmi aduce o bere!)",
+                "answer": "spun, nu mulțumesc, nu beau alcool, prefer să beau cola! La următoarea ofertă! Nu, mulțumesc, prefer să beau Cola! Dacă nu se oprește, ameninț că plec și mă ridic în mod demonstrativ."
+            },
+            {
+                "question": "Cum vă asiguraţi că noul comportament rămâne stabil pe termen lung?",
+                "answer": "În viitor, vreau să respect legea, pentru că nu mai vreau să pun viața nimănui în pericol. Desigur, nimeni nu poate da 100%. Riscul este minimal pentru că: Astăzi vorbesc cu alții (prietena care mă sprijină) despre problemele mele cât mai curând posibil. Nu mă mai arăt permanent puternic, pot să arăt că sunt și slab. Am învățat să spun \"Nu\", nu le mai fac pe plac la toți! Cunosc Situaţiile Riscante, ştiu despre dorința mea de a fi acceptat și de a aparţine, îmi cunosc cauzele consumului!"
+            }
+];
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function generateAnswers(questionIndex) {
+    if (!qa_data[questionIndex] || !qa_data[questionIndex].answer) {
+        console.error("Ungültige Daten für Frage:", questionIndex);
+        return [];
+    }
+
+    const correctAnswer = qa_data[questionIndex].answer;
+    const wrongAnswers = [];
+
+    // Generiere 2 unterschiedliche falsche Antworten
+    for (let i = 0; i < 2; i++) {
+        let randomIndex = Math.floor(Math.random() * qa_data.length);
+        while (randomIndex === questionIndex || wrongAnswers.includes(qa_data[randomIndex].answer)) {
+            randomIndex = Math.floor(Math.random() * qa_data.length);
+        }
+        wrongAnswers.push(qa_data[randomIndex].answer);
+    }
+
+    const allAnswers = [correctAnswer, ...wrongAnswers];
+    shuffleArray(allAnswers);
+    return allAnswers;
+}
+
+
+let currentQuestionIndex = 0;
+let correctAnswers = 0;
+
+function startQuiz() {
+    document.getElementById('quiz').style.display = 'block';
+    currentQuestionIndex = 0;
+    correctAnswers = 0;
+    showQuestion();
+}
+
+function showQuestion() {
+    const answerButtons = document.getElementById('answerButtons');
+    answerButtons.innerHTML = '';
+
+    if (currentQuestionIndex < qa_data.length) {
+        const question = qa_data[currentQuestionIndex].question;
+        document.getElementById('questionText').textContent = question;
+
+        const answers = generateAnswers(currentQuestionIndex);
+        answers.forEach((answer, index) => {
+            const button = document.createElement('button');
+            button.textContent = answer;
+            button.addEventListener('click', () => checkAnswer(answer, index));
+            answerButtons.appendChild(button);
+        });
+    } else {
+        showResults();
+    }
+}
+
+
+
+function checkAnswer(selectedAnswer, selectedButtonIndex) {
+    const correctAnswer = qa_data[currentQuestionIndex].answer;
+    const answerButtons = document.getElementById('answerButtons').children;
+    
+    for (let i = 0; i < answerButtons.length; i++) {
+        answerButtons[i].disabled = true;
+        if (i === selectedButtonIndex) {
+            if (selectedAnswer === correctAnswer) {
+                answerButtons[i].classList.add('correct');
+                correctAnswers++;
+            } else {
+                answerButtons[i].classList.add('incorrect');
+            }
+            answerButtons[i].classList.add('selected');
+        } else if (answerButtons[i].textContent === correctAnswer) {
+            answerButtons[i].classList.add('correct');
+        }
+    }
+    setTimeout(nextQuestion, 1500);
+}
+
+function nextQuestion() {
+    currentQuestionIndex++;
+    showQuestion();
+}
+
+function showResults() {
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+
+  const correctCount = correctAnswers;
+  const totalQuestions = qa_data.length;
+  let resultMessage = `Sie haben ${correctCount} von ${totalQuestions} Fragen richtig beantwortet. `;
+
+  if (correctCount > 40) {
+    resultMessage += "<span style='color:green;'>Test bestanden!</span>";
+  } else {
+    resultMessage += "<span style='color:red;'>Test nicht bestanden.</span>";
+  }
+
+  document.getElementById('results').innerHTML = resultMessage;
+}
+
+
+</script>
+
+</body>
+</html>
